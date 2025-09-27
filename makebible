@@ -1,0 +1,33 @@
+#!/bin/bash
+
+BIBLE_TXT=esv.txt
+
+if true; then
+  echo 'Downloading the PDF version of the ESV Bible...'
+  curl https://www.global-right-path.com/Downloads/BIBLE_English_Standard_Version.pdf > esv.pdf || exit 1
+
+  echo 'Converting it to a txt file...'
+  pdftotext -f 5 -layout esv.pdf $BIBLE_TXT || exit 1
+
+  echo 'Getting rid of non-printable characters...'
+  sed -i 's/[^[:print:]]//g' $BIBLE_TXT  || exit 1
+
+  echo 'Separating out the books...'
+fi 
+
+TGTDIR=${HOME}/Documents/books/bible
+mkdir -p $TGTDIR || exit 1
+chapterlinenums=($(sed -n -E '/^[0-9]+\. [1-3A-Z]/=' $BIBLE_TXT))
+NUMCHAPTERS=${#chapterlinenums[*]}
+for (( i = 0; i < $NUMCHAPTERS; ++i )); do 
+  begin=${chapterlinenums[ $i ]}
+  # The last book, Revelations, needs to go to the end of the file.
+  if [[ $i -lt 65 ]]; then
+    end=$(( ${chapterlinenums[ $(( i + 1 )) ]} - 1 ))
+  else
+    end='$'
+  fi
+  book=$(sed -n -E "${begin}s/[0-9]+\.\s*(.*)/\1/p" $BIBLE_TXT | tr ' ' '_')
+  booknum=$(printf '%02d' $(( i + 1 )))
+  sed -n "${begin},${end}p" $BIBLE_TXT > ${TGTDIR}/${booknum}_${book} || exit 1
+done
