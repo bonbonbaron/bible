@@ -1,19 +1,22 @@
 #!/bin/bash
 
+if ! which pdftotext; then
+  echo "The program pdftotext was not found on your machine. Download it first then run this again." 1>&2
+  exit 1
+fi
+
 BIBLE_TXT=esv.txt
 
-if true; then
-  echo 'Downloading the PDF version of the ESV Bible...'
-  curl https://www.global-right-path.com/Downloads/BIBLE_English_Standard_Version.pdf > esv.pdf || exit 1
+echo 'Downloading the PDF version of the ESV Bible...'
+curl https://www.global-right-path.com/Downloads/BIBLE_English_Standard_Version.pdf > esv.pdf || exit 1
 
-  echo 'Converting it to a txt file...'
-  pdftotext -f 5 -layout esv.pdf $BIBLE_TXT || exit 1
+echo 'Converting it to a txt file...'
+pdftotext -f 5 -layout esv.pdf $BIBLE_TXT || exit 1
 
-  echo 'Getting rid of non-printable characters...'
-  sed -i 's/[^[:print:]]//g' $BIBLE_TXT  || exit 1
+echo 'Getting rid of non-printable characters...'
+sed -i 's/[^[:print:]]//g' $BIBLE_TXT  || exit 1
 
-  echo 'Separating out the books...'
-fi 
+echo 'Separating out the books...'
 
 TGTDIR=${HOME}/Documents/books/bible
 mkdir -p $TGTDIR || exit 1
