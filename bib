@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BIBLE_DIR=${HOME}/Documents/books/bible
-BOOKFILE=$BIBLE_DIR/[0-9][0-9]_${book}
+BOOKFILE=
 
 function ensureNumeric() {
   local number=$1
@@ -18,7 +18,6 @@ function bookExists() {
     echo "Book $book not found." 1>&2 && exit 1
   fi
   BOOKFILE=${booksfound[0]}
-  echo bookfile is $BOOKFILE
   return 0
 }
 
@@ -38,15 +37,14 @@ while getopts "b:c:v:o" opt; do
   esac
 done
 
+BOOKFILE=${BOOKFILE:-${BIBLE_DIR}/01_Genesis}
+
 chapterline=$(sed -n "/Chapter ${CHAPTER}\>/=" $BOOKFILE)
 ensureNumeric $chapterline
-echo chapter line: $chapterline
 startfornextchap=$(( chapterline + 1 ))
 nextchapterline=$(sed -n "$startfornextchap,\$ {/\<Chapter [0-9]\+/ {=; q}}" $BOOKFILE)
-echo next chapter line: $nextchapterline
 ensureNumeric $nextchapterline
 verseline=$(sed -n "$chapterline,$nextchapterline {/\<${VERSE}\>$/ {=; q}}" $BOOKFILE)
-echo verseline is $verseline
 if [ -z "$verseline" ]; then
   echo "$BOOK Chapter $CHAPTER doesn't have a verse $VERSE." 1>&2 && exit 1
 fi
