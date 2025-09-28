@@ -1,0 +1,55 @@
+#!/bin/bash
+
+BIBLE_DIR=${HOME}/Documents/books/bible
+BOOKFILE=$BIBLE_DIR/[0-9][0-9]_${book}
+
+function ensureNumeric() {
+  local number=$1
+  test $number -gt 0 || exit 1
+  return 0
+}
+
+function bookExists() {
+  local book=${1/ /_}
+  local booksfound=($(find $BIBLE_DIR -name [0-9][0-9]_${book}))
+  if [ ${#booksfound[*]} -gt 1 ]; then
+    echo "Too many books found for $book." 1>&2 && exit 1
+  elif [ ${#booksfound} -eq 0 ]; then
+    echo "Book $book not found." 1>&2 && exit 1
+  fi
+  BOOKFILE=${booksfound[0]}
+  echo bookfile is $BOOKFILE
+  return 0
+}
+
+BOOK=Genesis
+CHAPTER=1
+VERSE=1
+OUTPUT_STDOUT=false
+
+OPTIND=1 
+while getopts "b:c:v:o" opt; do
+  case $opt in
+    b) bookExists $OPTARG && BOOK=$OPTARG;;
+    c) ensureNumeric $OPTARG && CHAPTER=$OPTARG;;
+    v) ensureNumeric $OPTARG && VERSE=$OPTARG;;
+    o) OUTPUT_STDOUT=true;;
+    *) echo "Invalid option: $OPT" 1>&2 && exit 1
+  esac
+done
+
+chapterline=$(sed -n "/Chapter ${CHAPTER}\>/=" $BOOKFILE)
+ensureNumeric $chapterline
+echo chapter line: $chapterline
+startfornextchap=$(( chapterline + 1 ))
+nextchapterline=$(sed -n "$startfornextchap,\$ {/\<Chapter [0-9]\+/ {=; q}}" $BOOKFILE)
+echo next chapter line: $nextchapterline
+ensureNumeric $nextchapterline
+verseline=$(sed -n "$chapterline,$nextchapterline {/\<${VERSE}\>$/ {=; q}}" $BOOKFILE)
+echo verseline is $verseline
+if [ -z "$verseline" ]; then
+  echo "$BOOK Chapter $CHAPTER doesn't have a verse $VERSE." 1>&2 && exit 1
+fi
+ensureNumeric $verseline
+
+less +${verseline} $BOOKFILE
