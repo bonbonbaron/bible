@@ -21,7 +21,7 @@ function bookExists() {
   return 0
 }
 
-BOOK=Genesis
+BOOK=
 CHAPTER=1
 VERSE=1
 OUTPUT_STDOUT=false
@@ -36,6 +36,9 @@ while getopts "b:c:v:o" opt; do
     *) echo "Invalid option: $OPT" 1>&2 && exit 1
   esac
 done
+
+BOOK=${BOOK:-$1}
+BOOK=${BOOK:-Genesis}
 
 BOOKFILE=${BOOKFILE:-${BIBLE_DIR}/01_Genesis}
 
